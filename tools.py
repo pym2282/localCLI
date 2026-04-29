@@ -11,13 +11,11 @@ import requests
 import xml.etree.ElementTree as ET
 
 from bs4 import BeautifulSoup
-from google import genai
-from google.genai import types
+from ddgs import DDGS
 
 
 RUN_TIMEOUT = 30
 FETCH_TIMEOUT = 20
-GEMINI_MODEL = "gemini-2.5-flash-lite"
 
 _LIST_DIR_SKIP = {
     ".git", ".svn", ".hg",
@@ -57,10 +55,7 @@ TOOL_ALIAS = {
 
 class ToolRouter:
     def __init__(self):
-        api_key = os.environ.get("GEMINI_API_KEY", "")
-        if not api_key:
-            print("[WARNING] GEMINI_API_KEY not set. SEARCH tool will fail.")
-        self.gemini_client = genai.Client(api_key=api_key)
+        pass
 
     def run(self, response):
         response = response.strip()
@@ -239,68 +234,33 @@ class ToolRouter:
         }
 
     def search(self, query):
-        prompt = f"""
-Search the web for:
-
-{query}
-
-Return ONLY valid JSON.
-
-Rules:
-- no markdown
-- no explanation
-- only factual extraction
-
-Format:
-
-{{
-  "query": "{query}",
-  "facts": [
-    {{
-      "key": "fact",
-      "value": "value",
-      "source": "source"
-    }}
-  ]
-}}
-"""
-
         try:
-            response = self.gemini_client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    tools=[types.Tool(google_search={})]
-                )
+            results = list(DDGS().text(query, max_results=8))
+            if not results:
+                return {
+                    "tool": "search",
+                    "success": False,
+                    "summary": "No results found",
+                    "content": [],
+                }
+
+            summary = "\n\n".join(
+                f"{r['title']}\n{r['href']}\n{r['body']}"
+                for r in results
             )
-
-            text = (response.text or "").strip()
-            text = re.sub(r"^```(?:json)?\s*", "", text)
-            text = re.sub(r"\s*```$", "", text)
-
-            try:
-                parsed = json.loads(text)
-                return {
-                    "tool": "search",
-                    "success": True,
-                    "summary": str(parsed)[:3000],
-                    "content": parsed
-                }
-
-            except Exception:
-                return {
-                    "tool": "search",
-                    "success": True,
-                    "summary": text[:3000],
-                    "content": text[:8000]
-                }
+            return {
+                "tool": "search",
+                "success": True,
+                "summary": summary[:3000],
+                "content": results,
+            }
 
         except Exception as e:
             return {
                 "tool": "search",
                 "success": False,
                 "summary": f"Search failed: {e}",
-                "content": str(e)
+                "content": str(e),
             }
 
     def calculate(self, expression):
@@ -635,17 +595,17 @@ Format:
                 preview += "\n... [diff truncated]"
             print(f"\nPreview:\n{preview}\n")
 
-            allow = input(
-                f"\nAllow file edit? [y/n]\n{path}\n> "
-            ).strip().lower()
-
-            if allow != "y":
-                return {
-                    "tool": "edit_file",
-                    "success": False,
-                    "summary": "Edit denied by user",
-                    "content": path
-                }
+            if os.environ.get("OCLI_EVAL") != "1":
+                allow = input(
+                    f"\nAllow file edit? [y/n]\n{path}\n> "
+                ).strip().lower()
+                if allow != "y":
+                    return {
+                        "tool": "edit_file",
+                        "success": False,
+                        "summary": "Edit denied by user",
+                        "content": path
+                    }
 
             with open(target, "w", encoding="utf-8") as f:
                 f.write(new_content)
@@ -720,17 +680,17 @@ Format:
                 preview += "\n... [diff truncated]"
             print(f"\nPreview:\n{preview}\n")
 
-            allow = input(
-                f"\nAllow file write? [y/n]\n{path}\n> "
-            ).strip().lower()
-
-            if allow != "y":
-                return {
-                    "tool": "write_file",
-                    "success": False,
-                    "summary": "Write denied by user",
-                    "content": path
-                }
+            if os.environ.get("OCLI_EVAL") != "1":
+                allow = input(
+                    f"\nAllow file write? [y/n]\n{path}\n> "
+                ).strip().lower()
+                if allow != "y":
+                    return {
+                        "tool": "write_file",
+                        "success": False,
+                        "summary": "Write denied by user",
+                        "content": path
+                    }
 
             parent = os.path.dirname(target)
             if parent:
