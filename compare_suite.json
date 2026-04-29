@@ -1,0 +1,61 @@
+{
+  "version": "2.0",
+  "runs_per_test": 3,
+  "test_prompts": [
+    {
+      "id": "code_refactor",
+      "type": "single",
+      "prompt": "for i in range(len(arr)): print(arr[i])  이 코드 더 좋게 고쳐줘"
+    },
+    {
+      "id": "bug_fix",
+      "type": "single",
+      "prompt": "다음 코드의 버그를 찾아서 고쳐줘:\ndef avg(nums):\n    return sum(nums) / len(nums)"
+    },
+    {
+      "id": "recursion_tradeoff",
+      "type": "single",
+      "prompt": "def fib(n): return n if n <= 1 else fib(n-1) + fib(n-2)\n이 함수 문제점이랑 개선 방법 설명해줘"
+    },
+    {
+      "id": "algo_compare",
+      "type": "single",
+      "prompt": "파이썬으로 이진탐색 구현해줘. 반복문 버전이랑 재귀 버전 둘 다"
+    },
+    {
+      "id": "context_build_on",
+      "type": "multi",
+      "turns": [
+        "파이썬으로 스택 클래스 작성해줘",
+        "방금 만든 스택에 peek 메서드랑 is_empty 추가해줘"
+      ]
+    },
+    {
+      "id": "context_chain",
+      "type": "multi",
+      "turns": [
+        "버블정렬 파이썬 코드 작성해줘",
+        "그 코드 시간복잡도 설명해줘",
+        "더 빠른 정렬 알고리즘으로 바꿔줘"
+      ]
+    },
+    {
+      "id": "context_refine",
+      "type": "multi",
+      "turns": [
+        "calculate_discount 함수 작성해줘. 할인율은 0~1 사이 float이야",
+        "그 함수에 입력값 검증 추가해줘",
+        "방금 만든 함수 테스트 케이스 3개 작성해줘"
+      ]
+    },
+    {
+      "id": "memory_long",
+      "type": "multi",
+      "turns": [
+        "파이썬 클래스 상속 예시 간단히 보여줘",
+        "리스트 컴프리헨션이 뭔지 설명해줘",
+        "첫 번째로 보여준 클래스 예시에서 다형성 적용해줘"
+      ]
+    }
+  ]
+}
